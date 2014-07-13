@@ -19,21 +19,18 @@
 #include <default_gui_model.h>
 #include <QtGui>
 
-class Synch : public DefaultGUIModel {
+class Sync : public DefaultGUIModel {
 
   public:
 
-    Synch(void);
-    virtual
-    ~Synch(void);
+    Sync(void);
+    virtual ~Sync(void);
 
-    virtual void
-    execute(void);
+    virtual void execute(void);
 
   protected:
 
     virtual void update(DefaultGUIModel::update_flags_t);
-//    virtual void refresh();
 
   private:
 

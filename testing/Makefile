@@ -1,3 +1,4 @@
+
 PLUGIN_NAME = sync
 
 HEADERS = sync.h

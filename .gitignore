@@ -2,6 +2,9 @@
 *.swp
 *~
 
+# libs folder
+./libs
+
 # Compiled Object files
 *.slo
 *.lo
