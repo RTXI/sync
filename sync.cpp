@@ -29,9 +29,7 @@ extern "C" Plugin::Object * createRTXIPlugin(void) {
 }
 
 static DefaultGUIModel::variable_t vars[] = {
-	{
-		"Models", "Models to synch 0-255", DefaultGUIModel::PARAMETER,
-	}
+	{ "Models", "Models to synch 0-255", DefaultGUIModel::PARAMETER, }
 };
 
 static size_t num_vars = sizeof(vars) / sizeof(DefaultGUIModel::variable_t);
@@ -39,12 +37,12 @@ static size_t num_vars = sizeof(vars) / sizeof(DefaultGUIModel::variable_t);
 Sync::Sync(void) : DefaultGUIModel("Sync", ::vars, ::num_vars), ModelIDString("0") {
 	setWhatsThis("<p><b>Sync:</b><br>This module allows you to synchronize other modules that are derived from the DefaultGUIModel class. It does not work with other custom user modules. Type in a comma-separated list (with or without spaces) of numbers that are the instance IDs of the modules you want to synchronize. Instance IDs are located in the left-hand corner of the module's toolbar.</p>");
 	update(INIT);
+	DefaultGUIModel::createGUI(vars, num_vars);
 	ListLen = 0;
 	refresh();
 }
 
-Sync::~Sync(void) {
-}
+Sync::~Sync(void) {}
 
 void Sync::execute(void) {
 	return;
@@ -55,6 +53,7 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 		case INIT:
 			setParameter("Models", ModelIDString);
 			break;
+			
 		case MODIFY:
 			ModelIDString = getParameter("Models");
 			ModelIDString.replace(QChar(', '), QChar(','));
@@ -67,6 +66,7 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 				i++;
 			}
 			break;
+		
 		case UNPAUSE:
 			for (i = 0; i < ListLen; i++) {
 				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
@@ -74,6 +74,7 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 				Model->refresh();
 			}
 			break;
+		
 		case PAUSE:
 			for (i = 0; i < ListLen; i++) {
 				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
@@ -81,6 +82,7 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 				Model->refresh();
 			}
 			break;
+		
 		default:
 			break;
 	}
