@@ -17,16 +17,19 @@
  */
 
 #include <default_gui_model.h>
+#include "/usr/local/lib/rtxi_includes/data_recorder.h"
 #include <QtGui>
 
 class Sync : public DefaultGUIModel {
+
+	Q_OBJECT
 
   public:
 
     Sync(void);
     virtual ~Sync(void);
-
     virtual void execute(void);
+		void customizeGUI(void);
 
   protected:
 
@@ -34,6 +37,7 @@ class Sync : public DefaultGUIModel {
 
   private:
 
+		bool startDataRecorder;
     QString ModelIDString;
     QStringList ModelIDList;
     DefaultGUIModel * Model;
@@ -41,4 +45,8 @@ class Sync : public DefaultGUIModel {
     QStringList::Iterator it;
     int ListLen;
     int i;
+
+		private slots:
+
+			void toggleRecord(bool);
 };

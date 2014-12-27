@@ -22,9 +22,10 @@
 *.a
 *.lib
 
+# Qt Mocs
+moc_*
+
 # Executables
 *.exe
 *.out
 *.app
-
-

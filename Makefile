@@ -3,7 +3,8 @@ PLUGIN_NAME = sync
 
 HEADERS = sync.h
 
-SOURCES = sync.cpp
+SOURCES = sync.cpp \
+					moc_sync.cpp
 
 LIBS = 
 

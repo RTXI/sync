@@ -14,7 +14,7 @@
 	 You should have received a copy of the GNU General Public License
 	 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
- */
+*/
 
 // Risa Lin
 // Wed 13 Jul 2011 18:58:18 PM EDT
@@ -29,7 +29,7 @@ extern "C" Plugin::Object * createRTXIPlugin(void) {
 }
 
 static DefaultGUIModel::variable_t vars[] = {
-	{ "Models", "Models to synch 0-255", DefaultGUIModel::PARAMETER, }
+	{ "Model IDs", "Models to synch 0-255", DefaultGUIModel::PARAMETER, }
 };
 
 static size_t num_vars = sizeof(vars) / sizeof(DefaultGUIModel::variable_t);
@@ -38,6 +38,7 @@ Sync::Sync(void) : DefaultGUIModel("Sync", ::vars, ::num_vars), ModelIDString("0
 	setWhatsThis("<p><b>Sync:</b><br>This module allows you to synchronize other modules that are derived from the DefaultGUIModel class. It does not work with other custom user modules. Type in a comma-separated list (with or without spaces) of numbers that are the instance IDs of the modules you want to synchronize. Instance IDs are located in the left-hand corner of the module's toolbar.</p>");
 	update(INIT);
 	DefaultGUIModel::createGUI(vars, num_vars);
+	customizeGUI();
 	ListLen = 0;
 	refresh();
 }
@@ -51,11 +52,12 @@ void Sync::execute(void) {
 void Sync::update(DefaultGUIModel::update_flags_t flag) {
 	switch (flag) {
 		case INIT:
-			setParameter("Models", ModelIDString);
+			setParameter("Model IDs", ModelIDString);
+			startDataRecorder = true;
 			break;
-			
+
 		case MODIFY:
-			ModelIDString = getParameter("Models");
+			ModelIDString = getParameter("Model IDs");
 			ModelIDString.replace(QChar(', '), QChar(','));
 			ModelIDList = ModelIDString.split(",");
 			ListLen = ModelIDList.size();
@@ -66,24 +68,46 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 				i++;
 			}
 			break;
-		
+
 		case UNPAUSE:
+			if(startDataRecorder) {
+				DataRecorder::startRecording();
+			}
+
 			for (i = 0; i < ListLen; i++) {
 				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
 				Model->setActive(true);
 				Model->refresh();
 			}
 			break;
-		
+
 		case PAUSE:
+			if(startDataRecorder) {
+				DataRecorder::stopRecording();
+			}
+
 			for (i = 0; i < ListLen; i++) {
 				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
 				Model->setActive(false);
 				Model->refresh();
 			}
 			break;
-		
+
 		default:
 			break;
 	}
+}
+
+void Sync::toggleRecord(bool) {
+	startDataRecorder = startDataRecorder == false ? true : false;
+}
+
+void Sync::customizeGUI(void) {
+	QGridLayout *customlayout = DefaultGUIModel::getLayout();
+	QCheckBox *checkBox = new QCheckBox("&Sync Data Recorder");
+	checkBox->setEnabled(true);
+	checkBox->setChecked(true);
+	QObject::connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggleRecord(bool)));
+	customlayout->addWidget(checkBox, 0, 0);
+	setLayout(customlayout);
 }
