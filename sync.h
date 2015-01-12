@@ -42,7 +42,6 @@ class Sync : public DefaultGUIModel {
     QStringList ModelIDList;
     DefaultGUIModel * Model;
     int *Model_ID_List;
-    QStringList::Iterator it;
     int ListLen;
     int i;
 
