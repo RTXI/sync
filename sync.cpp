@@ -41,6 +41,7 @@ Sync::Sync(void) : DefaultGUIModel("Sync", ::vars, ::num_vars), ModelIDString("0
 	customizeGUI();
 	ListLen = 0;
 	refresh();
+	QTimer::singleShot(0, this, SLOT(resizeMe()));
 }
 
 Sync::~Sync(void) {}
