@@ -1,10 +1,9 @@
 
-PLUGIN_NAME = sync
+PLUGIN_NAME = synch
 
-HEADERS = sync.h
+HEADERS = synch.h
 
-SOURCES = sync.cpp \
-					moc_sync.cpp
+SOURCES = synch.cpp
 
 LIBS = 
 
