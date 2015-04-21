@@ -14,7 +14,7 @@
 	 You should have received a copy of the GNU General Public License
 	 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-*/
+ */
 
 // Risa Lin
 // Wed 13 Jul 2011 18:58:18 PM EDT
@@ -71,8 +71,21 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 			break;
 
 		case UNPAUSE:
-			if(startDataRecorder) {
-				DataRecorder::startRecording();
+			if(startDataRecorder)
+			{
+				if(DataRecorder::Plugin::getInstance()->recStatus)
+				{
+					DataRecorder::startRecording();
+				}
+				else
+				{
+					QMessageBox::critical(
+							this, "DataRecorder not ready.",
+							"Please make sure a data file is specified and at least one channel is in the list.",
+							QMessageBox::Ok, QMessageBox::NoButton);
+					pauseButton->setChecked(true);
+					break;
+				}
 			}
 
 			for (i = 0; i < ListLen; i++) {
@@ -83,9 +96,8 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 			break;
 
 		case PAUSE:
-			if(startDataRecorder) {
+			if(startDataRecorder && DataRecorder::Plugin::getInstance()->recStatus)
 				DataRecorder::stopRecording();
-			}
 
 			for (i = 0; i < ListLen; i++) {
 				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
@@ -99,7 +111,8 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 	}
 }
 
-void Sync::toggleRecord(bool) {
+void Sync::toggleRecord(bool)
+{
 	startDataRecorder = startDataRecorder == false ? true : false;
 }
 
