@@ -40,6 +40,8 @@ Sync::Sync(void) : DefaultGUIModel("Sync", UTILITY, ::vars, ::num_vars), ModelID
 	DefaultGUIModel::createGUI(vars, num_vars);
 	customizeGUI();
 	ListLen = 0;
+	syncTimer = new QTimer;
+	QObject::connect(syncTimer, SIGNAL(timeout(void)), this, SLOT(unpauseSync(void)));
 	refresh();
 	QTimer::singleShot(0, this, SLOT(resizeMe()));
 }
@@ -94,6 +96,7 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 				Model->pauseButton->setEnabled(false);
 				Model->refresh();
 			}
+			syncTimer->start(timerWheel->value()*1e3);
 			break;
 
 		case PAUSE:
@@ -118,12 +121,41 @@ void Sync::toggleRecord(bool)
 	startDataRecorder = startDataRecorder == false ? true : false;
 }
 
-void Sync::customizeGUI(void) {
+void Sync::toggleTimer(bool timerStatus)
+{
+	if(timerStatus)
+		timerWheel->setEnabled(true);
+	else
+		timerWheel->setEnabled(false);
+}
+
+void Sync::unpauseSync(void)
+{
+	pauseButton->setChecked(true);
+}
+
+void Sync::customizeGUI(void)
+{
 	QGridLayout *customlayout = DefaultGUIModel::getLayout();
 	QCheckBox *checkBox = new QCheckBox("&Sync Data Recorder");
 	checkBox->setEnabled(true);
 	checkBox->setChecked(true);
 	QObject::connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggleRecord(bool)));
-	customlayout->addWidget(checkBox, 0, 0);
+	QCheckBox *timerCheckBox = new QCheckBox("&Sync Timer (s)");
+	QGroupBox *timerBox = new QGroupBox;
+	QGridLayout *timerLayout = new QGridLayout;
+	timerCheckBox->setWhatsThis("Timer for turning sync off after a user-specified time period");
+	timerCheckBox->setEnabled(true);
+	timerCheckBox->setChecked(false);
+	QObject::connect(timerCheckBox, SIGNAL(toggled(bool)), this, SLOT(toggleTimer(bool)));
+	timerWheel = new QSpinBox(this);
+	timerWheel->setEnabled(false);
+	timerWheel->setValue(10);
+	timerWheel->setFixedWidth(75);
+	timerLayout->addWidget(checkBox, 0, 0);
+	timerLayout->addWidget(timerCheckBox, 1, 0);
+	timerLayout->addWidget(timerWheel, 1, 1);
+	timerBox->setLayout(timerLayout);
+	customlayout->addWidget(timerBox, 2, 0);
 	setLayout(customlayout);
 }

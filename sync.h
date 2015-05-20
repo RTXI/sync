@@ -37,6 +37,8 @@ class Sync : public DefaultGUIModel {
 
   private:
 
+		QTimer *syncTimer;
+		QSpinBox *timerWheel;
 		bool startDataRecorder;
     QString ModelIDString;
     QStringList ModelIDList;
@@ -48,4 +50,6 @@ class Sync : public DefaultGUIModel {
 		private slots:
 
 			void toggleRecord(bool);
+			void unpauseSync(void);
+			void toggleTimer(bool);
 };
