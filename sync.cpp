@@ -34,7 +34,7 @@ static DefaultGUIModel::variable_t vars[] = {
 
 static size_t num_vars = sizeof(vars) / sizeof(DefaultGUIModel::variable_t);
 
-Sync::Sync(void) : DefaultGUIModel("Sync", ::vars, ::num_vars), ModelIDString("0") {
+Sync::Sync(void) : DefaultGUIModel("Sync", UTILITY, ::vars, ::num_vars), ModelIDString("0") {
 	setWhatsThis("<p><b>Sync:</b><br>This module allows you to synchronize other modules that are derived from the DefaultGUIModel class. It does not work with other custom user modules. Type in a comma-separated list (with or without spaces) of numbers that are the instance IDs of the modules you want to synchronize. Instance IDs are located in the left-hand corner of the module's toolbar.</p>");
 	update(INIT);
 	DefaultGUIModel::createGUI(vars, num_vars);
@@ -91,6 +91,7 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 			for (i = 0; i < ListLen; i++) {
 				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
 				Model->setActive(true);
+				Model->pauseButton->setEnabled(false);
 				Model->refresh();
 			}
 			break;
@@ -102,6 +103,7 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 			for (i = 0; i < ListLen; i++) {
 				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
 				Model->setActive(false);
+				Model->pauseButton->setEnabled(true);
 				Model->refresh();
 			}
 			break;
