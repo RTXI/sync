@@ -34,7 +34,7 @@ static DefaultGUIModel::variable_t vars[] = {
 
 static size_t num_vars = sizeof(vars) / sizeof(DefaultGUIModel::variable_t);
 
-Sync::Sync(void) : DefaultGUIModel("Sync", UTILITY, ::vars, ::num_vars), ModelIDString("0") {
+Sync::Sync(void) : DefaultGUIModel("Sync", ::vars, ::num_vars), ModelIDString("0") {
 	setWhatsThis("<p><b>Sync:</b><br>This module allows you to synchronize other modules that are derived from the DefaultGUIModel class. It does not work with other custom user modules. Type in a comma-separated list (with or without spaces) of numbers that are the instance IDs of the modules you want to synchronize. Instance IDs are located in the left-hand corner of the module's toolbar.</p>");
 	update(INIT);
 	DefaultGUIModel::createGUI(vars, num_vars);
@@ -141,7 +141,7 @@ void Sync::customizeGUI(void)
 	checkBox->setEnabled(true);
 	checkBox->setChecked(true);
 	QObject::connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggleRecord(bool)));
-	QCheckBox *timerCheckBox = new QCheckBox("&Sync Timer (s)");
+	QCheckBox *timerCheckBox = new QCheckBox("&Sync Timer");
 	QGroupBox *timerBox = new QGroupBox;
 	QGridLayout *timerLayout = new QGridLayout;
 	timerCheckBox->setWhatsThis("Timer for turning sync off after a user-specified time period");
