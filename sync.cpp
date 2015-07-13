@@ -29,7 +29,8 @@ extern "C" Plugin::Object * createRTXIPlugin(void) {
 }
 
 static DefaultGUIModel::variable_t vars[] = {
-	{ "Model IDs", "Models to synch 0-255", DefaultGUIModel::PARAMETER, }
+	{ "Model IDs", "Models to synch 0-255", DefaultGUIModel::PARAMETER, },
+	{ "Time (s)", "Elapsed Time (s)", DefaultGUIModel::STATE}, 
 };
 
 static size_t num_vars = sizeof(vars) / sizeof(DefaultGUIModel::variable_t);
@@ -49,6 +50,8 @@ Sync::Sync(void) : DefaultGUIModel("Sync", ::vars, ::num_vars), ModelIDString("0
 Sync::~Sync(void) {}
 
 void Sync::execute(void) {
+	systime = count * dt; // time in seconds
+	count++;
 	return;
 }
 
@@ -57,6 +60,9 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 		case INIT:
 			setParameter("Model IDs", ModelIDString);
 			startDataRecorder = true;
+			systime = 0;
+			setState("Time (s)", systime);
+			dt = RT::System::getInstance()->getPeriod() * 1e-9; // time in seconds
 			break;
 
 		case MODIFY:
@@ -97,6 +103,12 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 				Model->refresh();
 			}
 			syncTimer->start(timerWheel->value()*1e3);
+			systime = 0;
+			count = 0;
+			break;
+
+		case PERIOD:
+			dt = RT::System::getInstance()->getPeriod() * 1e-9; // time in seconds
 			break;
 
 		case PAUSE:
