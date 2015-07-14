@@ -37,9 +37,9 @@ static size_t num_vars = sizeof(vars) / sizeof(DefaultGUIModel::variable_t);
 
 Sync::Sync(void) : DefaultGUIModel("Sync", ::vars, ::num_vars), ModelIDString("0") {
 	setWhatsThis("<p><b>Sync:</b><br>This module allows you to synchronize other modules that are derived from the DefaultGUIModel class. It does not work with other custom user modules. Type in a comma-separated list (with or without spaces) of numbers that are the instance IDs of the modules you want to synchronize. Instance IDs are located in the left-hand corner of the module's toolbar.</p>");
-	update(INIT);
 	DefaultGUIModel::createGUI(vars, num_vars);
 	customizeGUI();
+	update(INIT);
 	ListLen = 0;
 	syncTimer = new QTimer;
 	QObject::connect(syncTimer, SIGNAL(timeout(void)), this, SLOT(unpauseSync(void)));
@@ -52,7 +52,6 @@ Sync::~Sync(void) {}
 void Sync::execute(void) {
 	systime = count * dt; // time in seconds
 	count++;
-	return;
 }
 
 void Sync::update(DefaultGUIModel::update_flags_t flag) {
@@ -139,7 +138,10 @@ void Sync::toggleTimer(bool timerStatus)
 	if(timerStatus)
 		timerWheel->setEnabled(true);
 	else
+	{
 		timerWheel->setEnabled(false);
+		syncTimer->stop();
+	}
 }
 
 void Sync::unpauseSync(void)
