@@ -38,6 +38,7 @@ class Sync : public DefaultGUIModel {
 	private:
 
 		QTimer *syncTimer;
+		QCheckBox *timerCheckBox;
 		QSpinBox *timerWheel;
 		bool startDataRecorder;
 		QString ModelIDString;

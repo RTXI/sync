@@ -102,7 +102,8 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 				Model->pauseButton->setEnabled(false);
 				Model->refresh();
 			}
-			syncTimer->start(timerWheel->value()*1e3);
+			if(timerCheckBox->isChecked())
+				syncTimer->start(timerWheel->value()*1e3);
 			systime = 0;
 			count = 0;
 			break;
@@ -156,7 +157,7 @@ void Sync::customizeGUI(void)
 	checkBox->setEnabled(true);
 	checkBox->setChecked(true);
 	QObject::connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggleRecord(bool)));
-	QCheckBox *timerCheckBox = new QCheckBox("&Sync Timer");
+	timerCheckBox = new QCheckBox("&Sync Timer");
 	QGroupBox *timerBox = new QGroupBox;
 	QGridLayout *timerLayout = new QGridLayout;
 	timerCheckBox->setWhatsThis("Timer for turning sync off after a user-specified time period");
