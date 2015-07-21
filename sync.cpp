@@ -157,7 +157,7 @@ void Sync::customizeGUI(void)
 	checkBox->setEnabled(true);
 	checkBox->setChecked(true);
 	QObject::connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggleRecord(bool)));
-	timerCheckBox = new QCheckBox("&Sync Timer");
+	timerCheckBox = new QCheckBox("&Sync Timer (s)");
 	QGroupBox *timerBox = new QGroupBox;
 	QGridLayout *timerLayout = new QGridLayout;
 	timerCheckBox->setWhatsThis("Timer for turning sync off after a user-specified time period");
