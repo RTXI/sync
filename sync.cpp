@@ -16,11 +16,6 @@
 
  */
 
-// Risa Lin
-// Wed 13 Jul 2011 18:58:18 PM EDT
-// Now accepts ", " or "," as delimiters between integers.
-
-
 #include <sync.h>
 #include <QtGui>
 
@@ -35,13 +30,14 @@ static DefaultGUIModel::variable_t vars[] = {
 
 static size_t num_vars = sizeof(vars) / sizeof(DefaultGUIModel::variable_t);
 
-Sync::Sync(void) : DefaultGUIModel("Sync", ::vars, ::num_vars), ModelIDString("0") {
+Sync::Sync(void) : DefaultGUIModel("Sync", ::vars, ::num_vars), ModelIDString("") {
 	setWhatsThis("<p><b>Sync:</b><br>This module allows you to synchronize other modules that are derived from the DefaultGUIModel class. It does not work with other custom user modules. Type in a comma-separated list (with or without spaces) of numbers that are the instance IDs of the modules you want to synchronize. Instance IDs are located in the left-hand corner of the module's toolbar.</p>");
 	DefaultGUIModel::createGUI(vars, num_vars);
 	customizeGUI();
 	update(INIT);
 	ListLen = 0;
 	syncTimer = new QTimer;
+	syncTimer->setTimerType(Qt::PreciseTimer);
 	QObject::connect(syncTimer, SIGNAL(timeout(void)), this, SLOT(unpauseSync(void)));
 	refresh();
 	QTimer::singleShot(0, this, SLOT(resizeMe()));
@@ -57,7 +53,7 @@ void Sync::execute(void) {
 void Sync::update(DefaultGUIModel::update_flags_t flag) {
 	switch (flag) {
 		case INIT:
-			startDataRecorder = true;
+			startDataRecorder = false;
 			systime = 0;
 			count = 0;
 			dt = RT::System::getInstance()->getPeriod() * 1e-9; // time in seconds
@@ -67,45 +63,51 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 
 		case MODIFY:
 			ModelIDString = getParameter("Model IDs");
-			ModelIDString.replace(QChar(', '), QChar(','));
-			ModelIDList = ModelIDString.split(",");
-			ListLen = ModelIDList.size();
-			Model_ID_List = new int[ListLen];
-			i = 0;
-			for (QStringList::Iterator it = ModelIDList.begin(); it != ModelIDList.end(); ++it) {
-				Model_ID_List[i] = (*it).toInt();
-				i++;
+			if(!ModelIDString.isEmpty())
+			{
+				ModelIDString.replace(QChar(', '), QChar(','));
+				ModelIDList = ModelIDString.split(",");
+				ListLen = ModelIDList.size();
+				Model_ID_List = new int[ListLen];
+				i = 0;
+				for (QStringList::Iterator it = ModelIDList.begin(); it != ModelIDList.end(); ++it) {
+					Model_ID_List[i] = (*it).toInt();
+					i++;
+				}
 			}
 			break;
 
 		case UNPAUSE:
-			if(startDataRecorder)
+			if(!ModelIDString.isEmpty())
 			{
-				if(DataRecorder::Plugin::getInstance()->recStatus)
+				if(startDataRecorder)
 				{
-					DataRecorder::startRecording();
+					if(DataRecorder::Plugin::getInstance()->recStatus)
+					{
+						DataRecorder::startRecording();
+					}
+					else
+					{
+						QMessageBox::critical(
+								this, "DataRecorder not ready.",
+								"Please make sure a data file is specified and at least one channel is in the list.",
+								QMessageBox::Ok, QMessageBox::NoButton);
+						pauseButton->setChecked(true);
+						break;
+					}
 				}
-				else
-				{
-					QMessageBox::critical(
-							this, "DataRecorder not ready.",
-							"Please make sure a data file is specified and at least one channel is in the list.",
-							QMessageBox::Ok, QMessageBox::NoButton);
-					pauseButton->setChecked(true);
-					break;
-				}
-			}
 
-			for (i = 0; i < ListLen; i++) {
-				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
-				Model->setActive(true);
-				Model->pauseButton->setEnabled(false);
-				Model->refresh();
+				for (i = 0; i < ListLen; i++) {
+					Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
+					Model->setActive(true);
+					Model->pauseButton->setEnabled(false);
+					Model->refresh();
+				}
+				if(timerCheckBox->isChecked())
+					syncTimer->start(timerWheel->value()*1e3);
+				systime = 0;
+				count = 0;
 			}
-			if(timerCheckBox->isChecked())
-				syncTimer->start(timerWheel->value()*1e3);
-			systime = 0;
-			count = 0;
 			break;
 
 		case PERIOD:
@@ -155,7 +157,7 @@ void Sync::customizeGUI(void)
 	QGridLayout *customlayout = DefaultGUIModel::getLayout();
 	QCheckBox *checkBox = new QCheckBox("&Sync Data Recorder");
 	checkBox->setEnabled(true);
-	checkBox->setChecked(true);
+	checkBox->setChecked(false);
 	QObject::connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggleRecord(bool)));
 	timerCheckBox = new QCheckBox("&Sync Timer (s)");
 	QGroupBox *timerBox = new QGroupBox;
