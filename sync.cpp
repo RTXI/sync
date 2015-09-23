@@ -77,6 +77,26 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 			}
 			break;
 
+		case PERIOD:
+			dt = RT::System::getInstance()->getPeriod() * 1e-9; // time in seconds
+			break;
+
+		case PAUSE:
+			if(startDataRecorder && DataRecorder::Plugin::getInstance()->recStatus)
+				DataRecorder::stopRecording();
+
+			for (i = 0; i < ListLen; i++) {
+				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
+				if(Model->getActive())
+					Model->setActive(false);
+				Model->pauseButton->setEnabled(true);
+				Model->refresh();
+			}
+			timerCheckBox->setEnabled(true);
+			checkBox->setEnabled(true);
+			timerWheel->setEnabled(true);
+			break;
+
 		case UNPAUSE:
 			if(!ModelIDString.isEmpty())
 			{
@@ -106,26 +126,12 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 				}
 				if(timerCheckBox->isChecked())
 					syncTimer->start(timerWheel->value()*1e3);
-				systime = 0;
-				count = 0;
 			}
-			break;
-
-		case PERIOD:
-			dt = RT::System::getInstance()->getPeriod() * 1e-9; // time in seconds
-			break;
-
-		case PAUSE:
-			if(startDataRecorder && DataRecorder::Plugin::getInstance()->recStatus)
-				DataRecorder::stopRecording();
-
-			for (i = 0; i < ListLen; i++) {
-				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
-				if(Model->getActive())
-					Model->setActive(false);
-				Model->pauseButton->setEnabled(true);
-				Model->refresh();
-			}
+			timerCheckBox->setEnabled(false);
+			checkBox->setEnabled(false);
+			timerWheel->setEnabled(false);
+			systime = 0;
+			count = 0;
 			break;
 
 		default:
@@ -157,7 +163,7 @@ void Sync::unpauseSync(void)
 void Sync::customizeGUI(void)
 {
 	QGridLayout *customlayout = DefaultGUIModel::getLayout();
-	QCheckBox *checkBox = new QCheckBox("&Sync Data Recorder");
+	checkBox = new QCheckBox("&Sync Data Recorder");
 	checkBox->setEnabled(true);
 	checkBox->setChecked(false);
 	QObject::connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggleRecord(bool)));

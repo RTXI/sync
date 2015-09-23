@@ -38,12 +38,13 @@ class Sync : public DefaultGUIModel {
 	private:
 
 		QTimer *syncTimer;
+		QCheckBox *checkBox;	
 		QCheckBox *timerCheckBox;
 		QSpinBox *timerWheel;
-		bool startDataRecorder;
 		QString ModelIDString;
 		QStringList ModelIDList;
 		DefaultGUIModel * Model;
+		bool startDataRecorder;
 		int *Model_ID_List;
 		int ListLen;
 		int i;
