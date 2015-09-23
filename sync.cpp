@@ -99,7 +99,8 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 
 				for (i = 0; i < ListLen; i++) {
 					Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
-					Model->setActive(true);
+					if(!Model->getActive())
+						Model->setActive(true);
 					Model->pauseButton->setEnabled(false);
 					Model->refresh();
 				}
@@ -120,7 +121,8 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 
 			for (i = 0; i < ListLen; i++) {
 				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
-				Model->setActive(false);
+				if(Model->getActive())
+					Model->setActive(false);
 				Model->pauseButton->setEnabled(true);
 				Model->refresh();
 			}
