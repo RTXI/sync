@@ -98,25 +98,24 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 			break;
 
 		case UNPAUSE:
+			if(startDataRecorder)
+			{
+				if(DataRecorder::Plugin::getInstance()->recStatus)
+				{
+					DataRecorder::startRecording();
+				}
+				else
+				{
+					QMessageBox::critical(
+							this, "DataRecorder not ready.",
+							"Please make sure a data file is specified and at least one channel is in the list.",
+							QMessageBox::Ok, QMessageBox::NoButton);
+					pauseButton->setChecked(true);
+					break;
+				}
+			}
 			if(!ModelIDString.isEmpty())
 			{
-				if(startDataRecorder)
-				{
-					if(DataRecorder::Plugin::getInstance()->recStatus)
-					{
-						DataRecorder::startRecording();
-					}
-					else
-					{
-						QMessageBox::critical(
-								this, "DataRecorder not ready.",
-								"Please make sure a data file is specified and at least one channel is in the list.",
-								QMessageBox::Ok, QMessageBox::NoButton);
-						pauseButton->setChecked(true);
-						break;
-					}
-				}
-
 				for (i = 0; i < ListLen; i++) {
 					Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
 					if(!Model->getActive())
@@ -124,9 +123,9 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 					Model->pauseButton->setEnabled(false);
 					Model->refresh();
 				}
-				if(timerCheckBox->isChecked())
-					syncTimer->start(timerWheel->value()*1e3);
 			}
+			if(timerCheckBox->isChecked())
+				syncTimer->start(timerWheel->value()*1e3);
 			timerCheckBox->setEnabled(false);
 			checkBox->setEnabled(false);
 			timerWheel->setEnabled(false);
