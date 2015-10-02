@@ -178,7 +178,7 @@ void Sync::customizeGUI(void)
 	timerWheel->setEnabled(false);
 	timerWheel->setValue(10);
 	timerWheel->setFixedWidth(75);
-	timerWheel->setMaximum(1000);
+	timerWheel->setMaximum(3600);
 	timerLayout->addWidget(checkBox, 0, 0);
 	timerLayout->addWidget(timerCheckBox, 1, 0);
 	timerLayout->addWidget(timerWheel, 1, 1);
