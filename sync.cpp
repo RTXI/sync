@@ -82,8 +82,8 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 			break;
 
 		case PAUSE:
-			if(startDataRecorder && DataRecorder::Plugin::getInstance()->recStatus)
-				DataRecorder::stopRecording();
+			if(startDataRecorder)
+				DataRecorder::Plugin::getInstance()->panelList.front()->stopRecordClicked();
 
 			for (i = 0; i < ListLen; i++) {
 				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
@@ -100,19 +100,7 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 		case UNPAUSE:
 			if(startDataRecorder)
 			{
-				if(DataRecorder::Plugin::getInstance()->recStatus)
-				{
-					DataRecorder::startRecording();
-				}
-				else
-				{
-					QMessageBox::critical(
-							this, "DataRecorder not ready.",
-							"Please make sure a data file is specified and at least one channel is in the list.",
-							QMessageBox::Ok, QMessageBox::NoButton);
-					pauseButton->setChecked(true);
-					break;
-				}
+				DataRecorder::Plugin::getInstance()->panelList.front()->startRecordClicked();
 			}
 			if(!ModelIDString.isEmpty())
 			{
