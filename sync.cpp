@@ -88,10 +88,8 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 			for (i = 0; i < ListLen; i++) {
 				Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
 				if(Model->getActive())
-				{
 					Model->setActive(false);
-					Model->pauseButton->setEnabled(true);
-				}
+				Model->pauseButton->setEnabled(true);
 				Model->refresh();
 			}
 			timerCheckBox->setEnabled(true);
@@ -109,10 +107,8 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 				for (i = 0; i < ListLen; i++) {
 					Model = dynamic_cast<DefaultGUIModel*> (Settings::Manager::getInstance()->getObject(Model_ID_List[i]));
 					if(!Model->getActive())
-					{
 						Model->setActive(true);
-						Model->pauseButton->setEnabled(false);
-					}
+					Model->pauseButton->setEnabled(false);
 					Model->refresh();
 				}
 			}
