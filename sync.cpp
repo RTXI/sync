@@ -1,20 +1,20 @@
 /*
-	 Copyright (C) 2011 Georgia Institute of Technology
+			Copyright (C) 2011 Georgia Institute of Technology
 
-	 This program is free software: you can redistribute it and/or modify
-	 it under the terms of the GNU General Public License as published by
-	 the Free Software Foundation, either version 3 of the License, or
-	 (at your option) any later version.
+			This program is free software: you can redistribute it and/or modify
+			it under the terms of the GNU General Public License as published by
+			the Free Software Foundation, either version 3 of the License, or
+			(at your option) any later version.
 
-	 This program is distributed in the hope that it will be useful,
-	 but WITHOUT ANY WARRANTY; without even the implied warranty of
-	 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	 GNU General Public License for more details.
+			This program is distributed in the hope that it will be useful,
+			but WITHOUT ANY WARRANTY; without even the implied warranty of
+			MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+			GNU General Public License for more details.
 
-	 You should have received a copy of the GNU General Public License
-	 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+			You should have received a copy of the GNU General Public License
+			along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
- */
+*/
 
 #include <sync.h>
 #include <QtGui>
@@ -36,9 +36,6 @@ Sync::Sync(void) : DefaultGUIModel("Sync", ::vars, ::num_vars), ModelIDString(""
 	customizeGUI();
 	update(INIT);
 	ListLen = 0;
-	syncTimer = new QTimer;
-	syncTimer->setTimerType(Qt::PreciseTimer);
-	QObject::connect(syncTimer, SIGNAL(timeout(void)), this, SLOT(unpauseSync(void)));
 	refresh();
 	QTimer::singleShot(0, this, SLOT(resizeMe()));
 }
@@ -47,6 +44,8 @@ Sync::~Sync(void) {}
 
 void Sync::execute(void) {
 	systime = count * dt; // time in seconds
+	if(systime >= timerValue)
+		pauseButton->setChecked(true);
 	count++;
 }
 
@@ -56,6 +55,7 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 			startDataRecorder = false;
 			systime = 0;
 			count = 0;
+			timerValue = 0.0;
 			dt = RT::System::getInstance()->getPeriod() * 1e-9; // time in seconds
 			setParameter("Model IDs", ModelIDString);
 			setState("Time (s)", systime);
@@ -94,7 +94,8 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 			}
 			timerCheckBox->setEnabled(true);
 			checkBox->setEnabled(true);
-			timerWheel->setEnabled(true);
+			if(timerCheckBox->isChecked())
+				timerWheel->setEnabled(true);
 			break;
 
 		case UNPAUSE:
@@ -113,7 +114,7 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 				}
 			}
 			if(timerCheckBox->isChecked())
-				syncTimer->start(timerWheel->value()*1e3);
+				timerValue = timerWheel->value();
 			timerCheckBox->setEnabled(false);
 			checkBox->setEnabled(false);
 			timerWheel->setEnabled(false);
@@ -136,15 +137,7 @@ void Sync::toggleTimer(bool timerStatus)
 	if(timerStatus)
 		timerWheel->setEnabled(true);
 	else
-	{
 		timerWheel->setEnabled(false);
-		syncTimer->stop();
-	}
-}
-
-void Sync::unpauseSync(void)
-{
-	pauseButton->setChecked(true);
 }
 
 void Sync::customizeGUI(void)
@@ -166,6 +159,7 @@ void Sync::customizeGUI(void)
 	timerWheel->setValue(10);
 	timerWheel->setFixedWidth(75);
 	timerWheel->setMaximum(3600);
+	timerWheel->setWhatsThis("Timer value in seconds");
 	timerLayout->addWidget(checkBox, 0, 0);
 	timerLayout->addWidget(timerCheckBox, 1, 0);
 	timerLayout->addWidget(timerWheel, 1, 1);

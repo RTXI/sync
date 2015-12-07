@@ -37,7 +37,6 @@ class Sync : public DefaultGUIModel {
 
 	private:
 
-		QTimer *syncTimer;
 		QCheckBox *checkBox;	
 		QCheckBox *timerCheckBox;
 		QSpinBox *timerWheel;
@@ -45,16 +44,16 @@ class Sync : public DefaultGUIModel {
 		QStringList ModelIDList;
 		DefaultGUIModel * Model;
 		bool startDataRecorder;
+		double timerValue;
 		int *Model_ID_List;
 		int ListLen;
 		int i;
 		double systime;
-    long long count;
-    double dt;
+		long long count;
+		double dt;
 
 		private slots:
 
 			void toggleRecord(bool);
-		void unpauseSync(void);
 		void toggleTimer(bool);
 };
