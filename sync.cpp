@@ -1,20 +1,20 @@
 /*
-			Copyright (C) 2011 Georgia Institute of Technology
+	 Copyright (C) 2011 Georgia Institute of Technology
 
-			This program is free software: you can redistribute it and/or modify
-			it under the terms of the GNU General Public License as published by
-			the Free Software Foundation, either version 3 of the License, or
-			(at your option) any later version.
+	 This program is free software: you can redistribute it and/or modify
+	 it under the terms of the GNU General Public License as published by
+	 the Free Software Foundation, either version 3 of the License, or
+	 (at your option) any later version.
 
-			This program is distributed in the hope that it will be useful,
-			but WITHOUT ANY WARRANTY; without even the implied warranty of
-			MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-			GNU General Public License for more details.
+	 This program is distributed in the hope that it will be useful,
+	 but WITHOUT ANY WARRANTY; without even the implied warranty of
+	 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	 GNU General Public License for more details.
 
-			You should have received a copy of the GNU General Public License
-			along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	 You should have received a copy of the GNU General Public License
+	 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-*/
+ */
 
 #include <sync.h>
 #include <QtGui>
@@ -75,6 +75,10 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 					i++;
 				}
 			}
+			if(timerCheckBox->isChecked())
+				timerValue = timerWheel->value();
+			systime = 0;
+			count = 0;
 			break;
 
 		case PERIOD:
@@ -93,16 +97,17 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 				Model->refresh();
 			}
 			timerCheckBox->setEnabled(true);
-			checkBox->setEnabled(true);
+			dataCheckBox->setEnabled(true);
 			if(timerCheckBox->isChecked())
 				timerWheel->setEnabled(true);
+			systime = 0;
+			count = 0;
 			break;
 
 		case UNPAUSE:
 			if(startDataRecorder)
-			{
 				DataRecorder::Plugin::getInstance()->panelList.front()->startRecordClicked();
-			}
+
 			if(!ModelIDString.isEmpty())
 			{
 				for (i = 0; i < ListLen; i++) {
@@ -113,13 +118,9 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 					Model->refresh();
 				}
 			}
-			if(timerCheckBox->isChecked())
-				timerValue = timerWheel->value();
 			timerCheckBox->setEnabled(false);
-			checkBox->setEnabled(false);
+			dataCheckBox->setEnabled(false);
 			timerWheel->setEnabled(false);
-			systime = 0;
-			count = 0;
 			break;
 
 		default:
@@ -134,19 +135,16 @@ void Sync::toggleRecord(bool)
 
 void Sync::toggleTimer(bool timerStatus)
 {
-	if(timerStatus)
-		timerWheel->setEnabled(true);
-	else
-		timerWheel->setEnabled(false);
+	timerWheel->setEnabled(timerStatus);
 }
 
 void Sync::customizeGUI(void)
 {
 	QGridLayout *customlayout = DefaultGUIModel::getLayout();
-	checkBox = new QCheckBox("&Sync Data Recorder");
-	checkBox->setEnabled(true);
-	checkBox->setChecked(false);
-	QObject::connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggleRecord(bool)));
+	dataCheckBox = new QCheckBox("&Sync Data Recorder");
+	dataCheckBox->setEnabled(true);
+	dataCheckBox->setChecked(false);
+	QObject::connect(dataCheckBox, SIGNAL(toggled(bool)), this, SLOT(toggleRecord(bool)));
 	timerCheckBox = new QCheckBox("&Sync Timer (s)");
 	QGroupBox *timerBox = new QGroupBox;
 	QGridLayout *timerLayout = new QGridLayout;
@@ -160,7 +158,7 @@ void Sync::customizeGUI(void)
 	timerWheel->setFixedWidth(75);
 	timerWheel->setMaximum(3600);
 	timerWheel->setWhatsThis("Timer value in seconds");
-	timerLayout->addWidget(checkBox, 0, 0);
+	timerLayout->addWidget(dataCheckBox, 0, 0);
 	timerLayout->addWidget(timerCheckBox, 1, 0);
 	timerLayout->addWidget(timerWheel, 1, 1);
 	timerBox->setLayout(timerLayout);

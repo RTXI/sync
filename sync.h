@@ -37,7 +37,7 @@ class Sync : public DefaultGUIModel {
 
 	private:
 
-		QCheckBox *checkBox;	
+		QCheckBox *dataCheckBox;	
 		QCheckBox *timerCheckBox;
 		QSpinBox *timerWheel;
 		QString ModelIDString;
