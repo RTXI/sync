@@ -17,7 +17,6 @@
  */
 
 #include <sync.h>
-#include <QtGui>
 
 extern "C" Plugin::Object * createRTXIPlugin(void) {
 	return new Sync();
