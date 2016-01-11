@@ -52,8 +52,8 @@ class Sync : public DefaultGUIModel {
 		long long count;
 		double dt;
 
-		private slots:
+	private slots:
 
-			void toggleRecord(bool);
+		void toggleRecord(bool);
 		void toggleTimer(bool);
 };
