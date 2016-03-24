@@ -1,20 +1,20 @@
 /*
-	 Copyright (C) 2011 Georgia Institute of Technology
+			Copyright (C) 2011 Georgia Institute of Technology
 
-	 This program is free software: you can redistribute it and/or modify
-	 it under the terms of the GNU General Public License as published by
-	 the Free Software Foundation, either version 3 of the License, or
-	 (at your option) any later version.
+			This program is free software: you can redistribute it and/or modify
+			it under the terms of the GNU General Public License as published by
+			the Free Software Foundation, either version 3 of the License, or
+			(at your option) any later version.
 
-	 This program is distributed in the hope that it will be useful,
-	 but WITHOUT ANY WARRANTY; without even the implied warranty of
-	 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	 GNU General Public License for more details.
+			This program is distributed in the hope that it will be useful,
+			but WITHOUT ANY WARRANTY; without even the implied warranty of
+			MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+			GNU General Public License for more details.
 
-	 You should have received a copy of the GNU General Public License
-	 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+			You should have received a copy of the GNU General Public License
+			along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
- */
+*/
 
 #include <sync.h>
 
@@ -43,8 +43,9 @@ Sync::~Sync(void) {}
 
 void Sync::execute(void) {
 	systime = count * dt; // time in seconds
-	if(systime >= timerValue)
-		pauseButton->setChecked(true);
+	if(timerCheckBox->isChecked())
+		if(systime >= timerValue)
+			pauseButton->setChecked(true);
 	count++;
 }
 
@@ -99,11 +100,11 @@ void Sync::update(DefaultGUIModel::update_flags_t flag) {
 			dataCheckBox->setEnabled(true);
 			if(timerCheckBox->isChecked())
 				timerWheel->setEnabled(true);
-			systime = 0;
 			count = 0;
 			break;
 
 		case UNPAUSE:
+			systime = 0;
 			if(startDataRecorder)
 				DataRecorder::Plugin::getInstance()->panelList.front()->startRecordClicked();
 
@@ -155,7 +156,7 @@ void Sync::customizeGUI(void)
 	timerWheel->setEnabled(false);
 	timerWheel->setValue(10);
 	timerWheel->setFixedWidth(75);
-	timerWheel->setMaximum(3600);
+	timerWheel->setMaximum(9999);
 	timerWheel->setWhatsThis("Timer value in seconds");
 	timerLayout->addWidget(dataCheckBox, 0, 0);
 	timerLayout->addWidget(timerCheckBox, 1, 0);
