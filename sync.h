@@ -17,7 +17,7 @@
  */
 
 #include <default_gui_model.h>
-#include "/usr/local/lib/rtxi_includes/data_recorder.h"
+#include "/usr/local/include/rtxi/data_recorder.h"
 #include <QtGui>
 
 class Sync : public DefaultGUIModel {
