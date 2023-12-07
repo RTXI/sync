@@ -1,4 +1,4 @@
-###Sync Module
+### Sync Module
 
 **Requirements:** None  
 **Limitations:** None  
@@ -14,14 +14,14 @@ To activate synchronized modules, hit unpause this module. To stop them, pause t
 <!--end-->
 
 
-####Input Channels
+#### Input Channels
 None
 
-####Output Channels
+#### Output Channels
 None
 
-####Parameters
+#### Parameters
 1. Model IDs - modules to synchronize (0-255)
 
-####States
+#### States
 1. Time (s) - elapsed Time (s)
