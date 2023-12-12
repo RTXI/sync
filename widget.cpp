@@ -1,3 +1,4 @@
+
 #include <QTimer>
 
 #include "widget.hpp"
@@ -33,7 +34,8 @@ sync::Panel::Panel(QMainWindow* main_window, Event::Manager* ev_manager)
       "without spaces) of numbers that are the instance IDs of the modules you "
       "want to synchronize. Instance IDs are located in the left-hand corner "
       "of the module's toolbar.</p>");
-  auto* customlayout = dynamic_cast<QVBoxLayout*>(this->layout());
+  auto* customlayout = new QVBoxLayout();
+  this->setLayout(customlayout);
 
   // Initialize plugin list
   updatePluginList();
@@ -49,6 +51,7 @@ sync::Panel::Panel(QMainWindow* main_window, Event::Manager* ev_manager)
   auto* pluginGroupBox = new QGroupBox("Plugins");
   auto* pluginGroupLayout = new QVBoxLayout();
   auto* pluginInfoLayout = new QHBoxLayout();
+
   pluginGroupBox->setLayout(pluginGroupLayout);
   pluginInfoLayout->addWidget(pluginList);
   pluginInfoLayout->addWidget(directionList);
@@ -59,9 +62,9 @@ sync::Panel::Panel(QMainWindow* main_window, Event::Manager* ev_manager)
   removePluginButton = new QPushButton("Remove");
   pluginButtonsLayout->addWidget(addPluginButton);
   pluginButtonsLayout->addWidget(removePluginButton);
-  pluginInfoLayout->addLayout(pluginButtonsLayout);
+  pluginGroupLayout->addLayout(pluginButtonsLayout);
   synchronizedPluginsList = new QListWidget();
-  pluginInfoLayout->addWidget(synchronizedPluginsList);
+  pluginGroupLayout->addWidget(synchronizedPluginsList);
   customlayout->addWidget(pluginGroupBox);
   updateSyncPluginList();
 
@@ -129,9 +132,7 @@ sync::Panel::Panel(QMainWindow* main_window, Event::Manager* ev_manager)
   QTimer::singleShot(0, this, SLOT(resizeMe()));
 }
 
-void sync::Panel::toggleRecord(bool)
-{
-}
+void sync::Panel::toggleRecord(bool) {}
 
 void sync::Panel::toggleTimer(bool timerStatus)
 {
@@ -148,9 +149,9 @@ void sync::Panel::updatePortList() {}
 
 void sync::Panel::updateSyncPluginList() {}
 
-sync::Device::Device() : RT::Device(std::string(sync::MODULE_NAME), {})
+sync::Device::Device()
+    : RT::Device(std::string(sync::MODULE_NAME), {})
 {
-
 }
 
 void sync::Device::read()
