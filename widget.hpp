@@ -23,20 +23,35 @@ inline std::vector<IO::channel_t> get_default_channels()
   return {};
 }
 
+typedef struct message {
+  bool record; // whether to start recording or not in the real-time thread
+  int timing; // -1 if no timing, >=0 is timing in seconds
+  std::vector<Widgets::Component*>* component_list; // pre-allocated vector of components to sync
+}message;
+
+typedef struct response {
+  bool running=false; // the ui side will be waiting for this to check whether sync device is operational
+}response;
+
 class Panel : public Widgets::Panel
 {
   Q_OBJECT
 public:
   Panel(QMainWindow* main_window, Event::Manager* ev_manager);
 
+signals:
+  void signalSyncPluginList();
+
 private slots:
-  void toggleRecord(bool);
-  void toggleTimer(bool);
-  void syncToggle(bool);
-  void updateSync();
+  void toggleRecord(bool recording);
+  void toggleTimer(bool timing);
+  void pauseToggle(bool paused);
+  void highlightSyncItem();
+  void reverseHighlightSyncItem();
   void updatePluginList();
-  void updatePortList();
   void updateSyncPluginList();
+  void updateSyncButton(QListWidgetItem* current, QListWidgetItem* previous);
+  void updateSyncButton();
 
 private:
   QCheckBox* dataCheckBox=nullptr;
@@ -48,11 +63,10 @@ private:
   QPushButton* modifyCustomButton=nullptr;
   QPushButton* unloadCustomButton=nullptr;
   QComboBox* pluginList=nullptr;
-  QComboBox* directionList=nullptr;
-  QComboBox* portList=nullptr;
   QLabel* syncState=nullptr;
   QLabel* timeElapsed=nullptr;
   QListWidget* synchronizedPluginsList=nullptr;
+  std::vector<IO::Block*> synchronizedBlocks;
   RT::OS::Fifo* ui_fifo;
 };
 
@@ -62,10 +76,11 @@ public:
   explicit Device();
   void read() override;
   void write() override;
+  void attachFifo(RT::OS::Fifo* fifo){ this->rt_fifo=fifo; }
 
 private:
   bool startDataRecorder;
-  int64_t timerValue;
+  int64_t startTimerValue;
   std::vector<Widgets::Component*> component_list;
   RT::OS::Fifo* rt_fifo=nullptr;
   int64_t dt;
@@ -77,6 +92,7 @@ public:
   explicit Plugin(Event::Manager* ev_manager);
   ~Plugin() final;
   std::unique_ptr<RT::OS::Fifo>& getFifo();
+  void receiveEvent(Event::Object* event) override;
 private:
   std::unique_ptr<Device> sync_device;
   std::unique_ptr<RT::OS::Fifo> sync_pipe;
