@@ -11,6 +11,22 @@ sync::Plugin::Plugin(Event::Manager* ev_manager)
   insert_device_event.setParam(
       "device", std::any(static_cast<RT::Device*>(this->sync_device.get())));
   getEventManager()->postEvent(&insert_device_event);
+  int err = RT::OS::getFifo(this->sync_pipe, 10 * sizeof(sync::response));
+  if(err < 0){ 
+    ERROR_MSG("sync::Plugin::Constructor : Unable to create rtxi fifo"); 
+    return;
+  }
+  sync_device->attachFifo(sync_pipe.get());
+}
+
+RT::OS::Fifo* sync::Plugin::getFifo()
+{
+  return this->sync_pipe.get();
+}
+
+bool sync::Plugin::isDeviceActive()
+{
+  return sync_device->isRunning();
 }
 
 sync::Plugin::~Plugin()
@@ -19,6 +35,7 @@ sync::Plugin::~Plugin()
   unplug_block_event.setParam(
       "device", std::any(static_cast<RT::Device*>(this->sync_device.get())));
   this->getEventManager()->postEvent(&unplug_block_event);
+  sync_pipe->close();
 }
 
 void sync::Plugin::receiveEvent(Event::Object* event)
@@ -38,7 +55,8 @@ void sync::Plugin::receiveEvent(Event::Object* event)
 
 sync::Panel::Panel(QMainWindow* main_window, Event::Manager* ev_manager)
     : Widgets::Panel(std::string(sync::MODULE_NAME), main_window, ev_manager)
-    , timerWheel(new QSpinBox(this)), pluginList(new QComboBox())
+    , timerWheel(new QSpinBox(this))
+    , pluginList(new QComboBox())
     , synchronizedPluginsList(new QListWidget())
 {
   setWhatsThis(
@@ -163,6 +181,12 @@ sync::Panel::Panel(QMainWindow* main_window, Event::Manager* ev_manager)
   customlayout->addWidget(buttonGroup);
 
   QTimer::singleShot(0, this, SLOT(resizeMe()));
+  pauseCustomButton->setDown(true);
+  auto* updatePauseTimer = new QTimer(this);
+  QObject::connect(updatePauseTimer,
+                   &QTimer::timeout,
+                   this,
+                   &sync::Panel::updatePauseButton);
 }
 
 void sync::Panel::toggleRecord(bool recording) 
@@ -180,17 +204,14 @@ void sync::Panel::toggleTimer(bool timing)
 
 void sync::Panel::pauseToggle(bool paused) 
 {
-  if(ui_fifo == nullptr){
-    pauseCustomButton->setDown(true);
-    return;
-  }
+  RT::OS::Fifo* ui_fifo = dynamic_cast<sync::Plugin*>(getHostPlugin())->getFifo();
   sync::message message;
   sync::message* message_ptr = &message;
   sync::response response;
-  std::vector<Widgets::Component*> components_list_copy = synchronizedComponents;
+  std::vector<IO::Block*> block_list_copy = synchronizedBlocks;
   message.record = paused;
   message.timing = timerCheckBox->isChecked() ? timerWheel->text().toInt() : -1;
-  message.component_list = &components_list_copy;
+  message.block_list = &block_list_copy;
   ui_fifo->write(&message_ptr, sizeof(sync::message*));
   ui_fifo->poll();
   ui_fifo->read(&response, sizeof(sync::response));
@@ -200,6 +221,12 @@ void sync::Panel::pauseToggle(bool paused)
   } else {
     pauseCustomButton->setDown(false);
   }
+}
+
+void sync::Panel::updatePauseButton()
+{
+  auto* hplugin = dynamic_cast<sync::Plugin*>(getHostPlugin());
+  pauseCustomButton->setDown(!hplugin->isDeviceActive());
 }
 
 void sync::Panel::highlightSyncItem()
@@ -251,6 +278,7 @@ void sync::Panel::updatePluginList()
 
 void sync::Panel::updateSyncPluginList()
 {
+  if(synchronizedPluginsList->count() == 0) { return; }
   IO::Block* block=nullptr;
   QListWidgetItem* item=nullptr;
   const QString name = QString(block->getName().c_str()) +
@@ -271,14 +299,22 @@ void sync::Panel::updateSyncPluginList()
   }
 }
 
-void sync::Panel::updateSyncButton(QListWidgetItem* current, QListWidgetItem* previous)
+void sync::Panel::updateSyncButton(QListWidgetItem*  /*current*/, QListWidgetItem*  /*previous*/)
 {
-
+  addPluginButton->setDown(true);
 }
 
 void sync::Panel::updateSyncButton()
 {
-
+  const auto block_variant = pluginList->currentData();
+  if(!block_variant.isValid()) { 
+    addPluginButton->setDown(false);
+    return; 
+  }
+  auto iter = std::find(synchronizedBlocks.begin(),
+                         synchronizedBlocks.end(),
+                         block_variant.value<IO::Block*>());
+  addPluginButton->setDown(iter != synchronizedBlocks.end()); 
 }
 
 sync::Device::Device()
@@ -294,17 +330,19 @@ void sync::Device::read()
   sync::message message{ false, -1, nullptr };
   sync::response response;
   // grab messages. We only use the last one sent
-  while(rt_fifo->readRT(&message, sizeof(sync::message)) > 0) {};
-  if(message.component_list != nullptr){
-    std::swap(component_list, *(message.component_list));
+  while(rt_fifo->readRT(&message, sizeof(sync::message*)) > 0) {};
+  if(message.block_list!= nullptr){
+    std::swap(block_list, *(message.block_list));
     startDataRecorder = message.record;
     dt = message.timing >= 0 ? RT::OS::SECONDS_TO_NANOSECONDS * message.timing : -1;
     startTimerValue = RT::OS::getTime();
+    response.running = startDataRecorder;
+    rt_fifo->writeRT(&response, sizeof(sync::response));
   }
 
   if(!startDataRecorder){
-    for(auto* component : component_list){
-      component->setState(RT::State::PAUSE);
+    for(auto* block : block_list){
+      block->setActive(false);
     }
     return;
   }
@@ -313,14 +351,12 @@ void sync::Device::read()
   if (current_time > (startTimerValue + dt))
   {
     startDataRecorder = false;
-    for (auto* component : component_list) {
-      component->setState(RT::State::PAUSE);
+    for (auto* block : block_list) {
+      block->setActive(false);
     }
-    response.running = false;
-    rt_fifo->writeRT(&response, sizeof(response));
   } else {
-    for(auto* component : component_list){
-      component->setState(RT::State::EXEC);
+    for(auto* block : block_list){
+      block->setActive(true);
     }
   }
 }

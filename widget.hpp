@@ -26,7 +26,7 @@ inline std::vector<IO::channel_t> get_default_channels()
 typedef struct message {
   bool record; // whether to start recording or not in the real-time thread
   int timing; // -1 if no timing, >=0 is timing in seconds
-  std::vector<Widgets::Component*>* component_list; // pre-allocated vector of components to sync
+  std::vector<IO::Block*>* block_list; // pre-allocated vector of components to sync
 }message;
 
 typedef struct response {
@@ -46,6 +46,7 @@ private slots:
   void toggleRecord(bool recording);
   void toggleTimer(bool timing);
   void pauseToggle(bool paused);
+  void updatePauseButton();
   void highlightSyncItem();
   void reverseHighlightSyncItem();
   void updatePluginList();
@@ -67,7 +68,6 @@ private:
   QLabel* timeElapsed=nullptr;
   QListWidget* synchronizedPluginsList=nullptr;
   std::vector<IO::Block*> synchronizedBlocks;
-  RT::OS::Fifo* ui_fifo;
 };
 
 class Device : public RT::Device 
@@ -77,11 +77,12 @@ public:
   void read() override;
   void write() override;
   void attachFifo(RT::OS::Fifo* fifo){ this->rt_fifo=fifo; }
+  bool isRunning() const{ return startDataRecorder; }
 
 private:
   bool startDataRecorder;
   int64_t startTimerValue;
-  std::vector<Widgets::Component*> component_list;
+  std::vector<IO::Block*> block_list;
   RT::OS::Fifo* rt_fifo=nullptr;
   int64_t dt;
 };
@@ -91,8 +92,9 @@ class Plugin final : public Widgets::Plugin
 public:
   explicit Plugin(Event::Manager* ev_manager);
   ~Plugin() final;
-  std::unique_ptr<RT::OS::Fifo>& getFifo();
+  RT::OS::Fifo* getFifo();
   void receiveEvent(Event::Object* event) override;
+  bool isDeviceActive();
 private:
   std::unique_ptr<Device> sync_device;
   std::unique_ptr<RT::OS::Fifo> sync_pipe;
