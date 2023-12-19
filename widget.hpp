@@ -45,6 +45,7 @@ signals:
 private slots:
   void toggleRecord(bool recording);
   void toggleTimer(bool timing);
+  void customModify();
   void pauseToggle(bool paused);
   void updatePauseButton();
   void highlightSyncItem();
