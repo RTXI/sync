@@ -353,6 +353,14 @@ void sync::Device::read()
   // grab messages. We only use the last one sent
   if(rt_fifo->readRT(&message_ptr, sizeof(sync::message*)) > 0){
     std::swap(block_list, *(message_ptr->block_list));
+    // We use a different mechanism for pausing the blocks than the one used by the
+    // widgets interface. However we should make it clear to user that their 
+    // plugin is paused even if it isn't exactly the same thing
+    const RT::State::state_t state = message_ptr->record ? RT::State::EXEC :
+                                                           RT::State::PAUSE ;
+    for(auto *block : block_list){
+      if(block->dependent()){ dynamic_cast<Widgets::Component*>(block)->setState(state); }
+    }
     startDataRecorder = message_ptr->record;
     dt = message_ptr->timing >= 0 ? RT::OS::SECONDS_TO_NANOSECONDS * message_ptr->timing : -1;
     startTimerValue = RT::OS::getTime();
