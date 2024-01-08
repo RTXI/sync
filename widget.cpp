@@ -46,8 +46,6 @@ void sync::Plugin::receiveEvent(Event::Object* event)
   switch(event->getType()){
     case Event::Type::RT_THREAD_INSERT_EVENT:
     case Event::Type::RT_THREAD_REMOVE_EVENT:
-    case Event::Type::RT_DEVICE_INSERT_EVENT:
-    case Event::Type::RT_DEVICE_REMOVE_EVENT:
       sync_panel->signalSyncPluginList();
       break;
     default:
