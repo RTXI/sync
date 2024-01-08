@@ -76,10 +76,7 @@ sync::Panel::Panel(QMainWindow* main_window, Event::Manager* ev_manager)
   auto* customlayout = new QVBoxLayout();
   this->setLayout(customlayout);
 
-  // Initialize plugin list
-  updatePluginList();
-
-  // Initialize plugin group
+    // Initialize plugin group
   auto* pluginGroupBox = new QGroupBox("Plugins");
   auto* pluginGroupLayout = new QVBoxLayout();
 
@@ -191,18 +188,14 @@ sync::Panel::Panel(QMainWindow* main_window, Event::Manager* ev_manager)
   customlayout->addWidget(buttonGroup);
 
   pauseCustomButton->setDown(true);
-  auto* updatePauseTimer = new QTimer(this);
-  updatePauseTimer->start(1000);
-  QObject::connect(updatePauseTimer,
-                   &QTimer::timeout,
-                   this,
-                   &sync::Panel::updatePauseButton);
   record_timer->start(1000);
   QObject::connect(record_timer,
                    &QTimer::timeout,
                    this,
                    &sync::Panel::updateRecordTime);
   QTimer::singleShot(0, this, SLOT(resizeMe()));
+  // Initialize plugin list
+  updatePluginList();
 }
 
 void sync::Panel::toggleRecord(bool recording) 
@@ -227,9 +220,23 @@ void sync::Panel::modify()
 void sync::Panel::pauseToggle(bool paused) 
 {
   auto* hplugin = dynamic_cast<sync::Plugin*>(getHostPlugin());
-  if(hplugin == nullptr) { return; }
+  if(hplugin == nullptr) { 
+    pauseCustomButton->setChecked(true);
+    pauseCustomButton->setDown(true);
+    ready = false;
+    time = 0;
+    syncState->setText(QString("Try Again"));
+    return; 
+  }
   RT::OS::Fifo* ui_fifo = hplugin->getFifo();
-  if(ui_fifo == nullptr) { return; }
+  if(ui_fifo == nullptr) { 
+    pauseCustomButton->setChecked(true);
+    pauseCustomButton->setDown(true);
+    ready = false;
+    time = 0;
+    syncState->setText(QString("Try Again"));
+    return; 
+  }
   sync::message message;
   sync::message* message_ptr = &message;
   sync::response response;
@@ -254,17 +261,8 @@ void sync::Panel::pauseToggle(bool paused)
     Event::Object event(event_type);
     getRTXIEventManager()->postEvent(&event);
   }
-}
-
-void sync::Panel::updatePauseButton()
-{
-  sync::response response;
-  auto* hplugin = dynamic_cast<sync::Plugin*>(getHostPlugin());
-  const int64_t response_bytes = hplugin->getFifo()->read(&response, sizeof(sync::response));
-  if(response_bytes <= 0) { return; }
-  pauseCustomButton->setDown(!response.running);
-  pauseCustomButton->setChecked(!response.running);
-  syncState->setText(response.running ? QString("Running...") : QString("Ready"));
+  pauseCustomButton->setChecked(paused);
+  pauseCustomButton->setDown(paused);
 }
 
 void sync::Panel::highlightSyncItem()
@@ -350,7 +348,7 @@ void sync::Panel::updateSyncPluginList()
       synchronizedPluginsList->addItem(item);
     }
   }
-  addPluginButton->setDown(addPluginButton->isChecked());
+  //addPluginButton->setDown(addPluginButton->isChecked());
   ready=false;
   syncState->setText("Modify");
 }

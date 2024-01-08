@@ -48,7 +48,6 @@ private slots:
   void toggleTimer(bool timing);
   void modify() override;
   void pauseToggle(bool paused);
-  void updatePauseButton();
   void highlightSyncItem();
   void reverseHighlightSyncItem();
   void updatePluginList();
