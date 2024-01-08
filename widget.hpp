@@ -39,6 +39,7 @@ class Panel : public Widgets::Panel
 public:
   Panel(QMainWindow* main_window, Event::Manager* ev_manager);
 
+  void removeSyncBlock(Widgets::Component* component);
 signals:
   void signalSyncPluginList();
 

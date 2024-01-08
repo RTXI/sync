@@ -43,9 +43,14 @@ sync::Plugin::~Plugin()
 void sync::Plugin::receiveEvent(Event::Object* event)
 {
   auto* sync_panel = dynamic_cast<sync::Panel*>(this->getPanel());
+  RT::Thread* removed_thread = nullptr;
   switch(event->getType()){
     case Event::Type::RT_THREAD_INSERT_EVENT:
+      sync_panel->signalSyncPluginList();
+      break;
     case Event::Type::RT_THREAD_REMOVE_EVENT:
+      removed_thread = std::any_cast<RT::Thread*>(event->getParam("thread"));
+      sync_panel->removeSyncBlock(dynamic_cast<Widgets::Component*>(removed_thread));
       sync_panel->signalSyncPluginList();
       break;
     default:
@@ -221,7 +226,10 @@ void sync::Panel::modify()
 
 void sync::Panel::pauseToggle(bool paused) 
 {
-  RT::OS::Fifo* ui_fifo = dynamic_cast<sync::Plugin*>(getHostPlugin())->getFifo();
+  auto* hplugin = dynamic_cast<sync::Plugin*>(getHostPlugin());
+  if(hplugin == nullptr) { return; }
+  RT::OS::Fifo* ui_fifo = hplugin->getFifo();
+  if(ui_fifo == nullptr) { return; }
   sync::message message;
   sync::message* message_ptr = &message;
   sync::response response;
@@ -306,6 +314,9 @@ void sync::Panel::updatePluginList()
                         QVariant::fromValue(dynamic_cast<Widgets::Component*>(block)));
   }
   pluginList->setCurrentIndex(pluginList->findData(prev_selected_plugin));
+  // The user could have removed a plugin, which would be very bad and crash the
+  // program... unless we stop the sync plugin to avoid nullptr access'
+  pauseToggle(/*paused=*/true);
 }
 
 void sync::Panel::updateSyncPluginList()
@@ -343,6 +354,27 @@ void sync::Panel::updateSyncPluginList()
   ready=false;
   syncState->setText("Modify");
 }
+
+void sync::Panel::removeSyncBlock(Widgets::Component* component)
+{
+  auto iter = std::find(synchronizedBlocks.begin(),
+                        synchronizedBlocks.end(),
+                        component);
+  if(iter != synchronizedBlocks.end()){ synchronizedBlocks.erase(iter); }
+  // We should update the ui list as well
+  QString temp_name;
+  QListWidgetItem* item = nullptr;
+  synchronizedPluginsList->clear();
+  for(auto* block: synchronizedBlocks){
+    temp_name = QString(block->getName().c_str()) +
+                QString(" ") + 
+                QString::number(block->getID());
+    item = new QListWidgetItem(temp_name);
+    item->setData(Qt::UserRole, QVariant::fromValue(block));
+    synchronizedPluginsList->addItem(item);
+  }
+}
+                         
 
 void sync::Panel::updateSyncButton(QListWidgetItem*  current, QListWidgetItem*  /*previous*/)
 {
