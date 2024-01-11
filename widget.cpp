@@ -165,7 +165,7 @@ sync::Panel::Panel(QMainWindow* main_window, Event::Manager* ev_manager)
   pauseCustomButton->setCheckable(true);
   pauseCustomButton->setChecked(true);
   QObject::connect(pauseCustomButton, 
-                   &QPushButton::toggled, 
+                   &QPushButton::clicked, 
                    this, 
                    &sync::Panel::pauseToggle);
   buttonLayout->addWidget(pauseCustomButton);
@@ -193,6 +193,10 @@ sync::Panel::Panel(QMainWindow* main_window, Event::Manager* ev_manager)
                    &QTimer::timeout,
                    this,
                    &sync::Panel::updateRecordTime);
+  QObject::connect(record_timer,
+                   &QTimer::timeout,
+                   this,
+                   &sync::Panel::update_pause_slot);
   QTimer::singleShot(0, this, SLOT(resizeMe()));
   // Initialize plugin list
   updatePluginList();
@@ -208,21 +212,30 @@ void sync::Panel::toggleTimer(bool timing)
   timerWheel->setEnabled(timing);
 }
 
+void sync::Panel::update_pause_slot()
+{
+  auto* hplugin = dynamic_cast<sync::Plugin*>(getHostPlugin());
+  if(hplugin == nullptr) { return; }
+  const bool paused = !hplugin->isDeviceActive();
+  this->pauseCustomButton->setDown(paused);
+  this->pauseCustomButton->setChecked(paused);
+}
+
 void sync::Panel::modify()
 {
   // modify button will automatically update parameters and pause the sync device
-  pauseToggle(/*paused=*/true);
   time = 0;
   ready = true;
   syncState->setText("Ready");
+  pauseToggle();
 }
 
-void sync::Panel::pauseToggle(bool paused) 
+void sync::Panel::pauseToggle() 
 {
   auto* hplugin = dynamic_cast<sync::Plugin*>(getHostPlugin());
   if(hplugin == nullptr) { 
-    pauseCustomButton->setChecked(true);
     pauseCustomButton->setDown(true);
+    pauseCustomButton->setChecked(true);
     ready = false;
     time = 0;
     syncState->setText(QString("Try Again"));
@@ -230,8 +243,8 @@ void sync::Panel::pauseToggle(bool paused)
   }
   RT::OS::Fifo* ui_fifo = hplugin->getFifo();
   if(ui_fifo == nullptr) { 
-    pauseCustomButton->setChecked(true);
     pauseCustomButton->setDown(true);
+    pauseCustomButton->setChecked(true);
     ready = false;
     time = 0;
     syncState->setText(QString("Try Again"));
@@ -240,29 +253,32 @@ void sync::Panel::pauseToggle(bool paused)
   sync::message message;
   sync::message* message_ptr = &message;
   sync::response response;
-  std::vector<Widgets::Component*> block_list_copy = synchronizedBlocks;
-  message.record = !paused;
+  std::vector<Widgets::Component*> block_list_copy(synchronizedBlocks);
+  message.start = !pauseCustomButton->isChecked();
   message.timing = timerCheckBox->isChecked() ? timerWheel->text().toInt() : -1;
   message.block_list = &block_list_copy;
   ui_fifo->write(&message_ptr, sizeof(sync::message*));
   ui_fifo->poll();
   ui_fifo->read(&response, sizeof(sync::response));
-  if(response.running == paused){
+  if(response.running != message.start){
     ERROR_MSG("sync::Panel::Pause : Unable to synchronize all plugins. Sync plugin paused");
-    pauseCustomButton->setChecked(true);
+    ready = false;
     pauseCustomButton->setDown(true);
+    pauseCustomButton->setChecked(true);
+    syncState->setText("Error!");
+    return;
   } 
-  ready = response.running != paused;
+  ready = true;
   time = 0;
-  syncState->setText(ready ? QString("Ready") : QString("Error!"));
+  syncState->setText("Ready");
   if(syncRecorder){
-    Event::Type event_type = !paused ? Event::Type::START_RECORDING_EVENT :
-                                       Event::Type::STOP_RECORDING_EVENT;
+    Event::Type event_type = !pauseCustomButton->isChecked() ? Event::Type::START_RECORDING_EVENT :
+                                                               Event::Type::STOP_RECORDING_EVENT;
     Event::Object event(event_type);
     getRTXIEventManager()->postEvent(&event);
   }
-  pauseCustomButton->setChecked(paused);
-  pauseCustomButton->setDown(paused);
+  pauseCustomButton->setDown(!ready);
+  pauseCustomButton->setChecked(!ready);
 }
 
 void sync::Panel::highlightSyncItem()
@@ -314,7 +330,9 @@ void sync::Panel::updatePluginList()
   pluginList->setCurrentIndex(pluginList->findData(prev_selected_plugin));
   // The user could have removed a plugin, which would be very bad and crash the
   // program... unless we stop the sync plugin to avoid nullptr access'
-  pauseToggle(/*paused=*/true);
+  pauseCustomButton->setDown(true);
+  ready = false;
+  pauseToggle();
 }
 
 void sync::Panel::updateSyncPluginList()
@@ -399,14 +417,14 @@ void sync::Panel::updateSyncButton()
 void sync::Panel::updateRecordTime()
 {
   if(ready.load() && !pauseCustomButton->isChecked()){
-    time++;
     timeElapsed->setText(QString::number(time.load())+QString(" sec"));
+    time++;
   }
 }
 
 sync::Device::Device()
     : RT::Device(std::string(sync::MODULE_NAME), {})
-    , startDataRecorder(false)
+    , start(false)
     , startTimerValue(0)
     , dt(0)
 {
@@ -423,21 +441,21 @@ void sync::Device::read()
   // grab message. We only grab the first one 
   if(rt_fifo->readRT(&message_ptr, sizeof(sync::message*)) > 0){
     std::swap(block_list, *(message_ptr->block_list));
-    const RT::State::state_t state = message_ptr->record ? RT::State::EXEC :
-                                                           RT::State::PAUSE ;
+    const RT::State::state_t state = message_ptr->start ? RT::State::EXEC :
+                                                         RT::State::PAUSE ;
     for(auto *block : block_list){
       block->setState(state);
     }
-    startDataRecorder = message_ptr->record;
+    start = message_ptr->start;
     dt = message_ptr->timing >= 0 ? RT::OS::SECONDS_TO_NANOSECONDS * message_ptr->timing : -1;
     startTimerValue = RT::OS::getTime();
-    response.running = startDataRecorder;
+    response.running = start;
     rt_fifo->writeRT(&response, sizeof(sync::response));
   }
 }
 
 void sync::Device::write() {
-  if(!startDataRecorder){
+  if(!start){
     for(auto* block : block_list){
       block->setState(RT::State::PAUSE);
     }
@@ -448,12 +466,10 @@ void sync::Device::write() {
   int64_t current_time = RT::OS::getTime();
   if (current_time > (startTimerValue + dt))
   {
-    startDataRecorder = false;
+    start = false;
     for (auto* block : block_list) {
       block->setState(RT::State::PAUSE);
     }
-    sync::response response { false };
-    rt_fifo->writeRT(&response, sizeof(sync::response));
   } else {
     for(auto* block : block_list){
       block->setState(RT::State::EXEC);

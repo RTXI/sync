@@ -24,7 +24,7 @@ inline std::vector<IO::channel_t> get_default_channels()
 }
 
 typedef struct message {
-  bool record; // whether to start recording or not in the real-time thread
+  bool start; // Whether to start all synchronized threads in real-time
   int timing; // -1 if no timing, >=0 is timing in seconds
   std::vector<Widgets::Component*>* block_list; // pre-allocated vector of components to sync
 }message;
@@ -47,7 +47,7 @@ private slots:
   void toggleRecord(bool recording);
   void toggleTimer(bool timing);
   void modify() override;
-  void pauseToggle(bool paused);
+  void pauseToggle();
   void highlightSyncItem();
   void reverseHighlightSyncItem();
   void updatePluginList();
@@ -55,6 +55,7 @@ private slots:
   void updateSyncButton(QListWidgetItem* current, QListWidgetItem* previous);
   void updateSyncButton();
   void updateRecordTime();
+  void update_pause_slot();
 
 private:
   QCheckBox* dataCheckBox=nullptr;
@@ -83,10 +84,10 @@ public:
   void read() override;
   void write() override;
   void attachFifo(RT::OS::Fifo* fifo){ this->rt_fifo=fifo; }
-  bool isRunning() const{ return startDataRecorder; }
+  bool isRunning() const{ return start; }
 
 private:
-  bool startDataRecorder;
+  bool start;
   int64_t startTimerValue;
   std::vector<Widgets::Component*> block_list;
   RT::OS::Fifo* rt_fifo=nullptr;
