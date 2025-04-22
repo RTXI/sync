@@ -494,7 +494,7 @@ void sync::Device::write()
     }
   } else {
     for (auto* block : block_list) {
-      block->setState(RT::State::EXEC);
+      block->setState(RT::State::UNPAUSE);
     }
   }
 }
